@@ -1,5 +1,5 @@
 var meditor = {
-    extensions: {}
+    plugins: {}
 };
 
 (function (window, document) {

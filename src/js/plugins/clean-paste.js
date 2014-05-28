@@ -3,7 +3,7 @@
 (function (window, document) {
     'use strict';
 
-    meditor.extensions.paste = {
+    meditor.plugins.paste = {
 
         cleanPaste: function (text) {
 

@@ -1,5 +1,5 @@
 var meditor = {
-    extensions: {}
+    plugins: {}
 };
 
 (function (window, document) {
@@ -193,7 +193,7 @@ var meditor = {
 (function (window, document) {
     'use strict';
 
-    meditor.extensions.paste = {
+    meditor.plugins.paste = {
 
         cleanPaste: function (text) {
 
