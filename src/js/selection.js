@@ -64,7 +64,29 @@
                 }
             }
             return selHtml;
+        },
+
+        getParentElement: function getParentElement() {
+            var selectedParentElement = null,
+                range = window.getSelection().getRangeAt(0);
+            if (this.isSingleNode(range)) {
+                selectedParentElement = range.startContainer.childNodes[range.startOffset];
+            } else if (range.startContainer.nodeType === 3) {
+                selectedParentElement = range.startContainer.parentNode;
+            } else {
+                selectedParentElement = range.startContainer;
+            }
+            return selectedParentElement;
+        },
+
+        // http://stackoverflow.com/questions/15867542/range-object-get-selection-parent-node-chrome-vs-firefox
+        isSingleNode: function (range) {
+            var startNode = range.startContainer;
+            return startNode === range.endContainer &&
+                startNode.hasChildNodes() &&
+                range.endOffset === range.startOffset + 1;
         }
+
     };
 
 }(window, document));
