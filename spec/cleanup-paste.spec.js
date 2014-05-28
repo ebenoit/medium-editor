@@ -58,7 +58,7 @@ describe('Clean pasted HTML', function () {
             sel.removeAllRanges();
             sel.addRange(range);
 
-            meditor.plugins.paste.cleanPaste(tests[i].paste);
+            meditor.plugins.cleanPaste.clean(tests[i].paste);
             jasmine.clock().tick(100);
             expect(editorEl.innerHTML).toEqual(tests[i].output);
         }
@@ -99,7 +99,7 @@ describe('Clean pasted HTML', function () {
             sel.removeAllRanges();
             sel.addRange(range);
 
-            meditor.plugins.paste.cleanPaste(tests[i].paste);
+            meditor.plugins.cleanPaste.clean(tests[i].paste);
             jasmine.clock().tick(100);
             expect(editorEl.innerHTML).toEqual('Before&nbsp;' + tests[i].output + '&nbsp;after.');
         }

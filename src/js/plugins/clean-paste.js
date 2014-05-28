@@ -3,9 +3,9 @@
 (function (window, document) {
     'use strict';
 
-    meditor.plugins.paste = {
+    meditor.plugins.cleanPaste = {
 
-        cleanPaste: function (text) {
+        clean: function (text) {
 
             /*jslint regexp: true*/
             /*

@@ -35,7 +35,9 @@ var meditor = {
 
         // http://stackoverflow.com/questions/17907445/how-to-detect-ie11#comment30165888_17907562
         // by rg89
-        isIE: ((navigator.appName === 'Microsoft Internet Explorer') || ((navigator.appName === 'Netscape') && (new RegExp('Trident/.*rv:([0-9]{1,}[.0-9]{0,})').exec(navigator.userAgent) !== null)))
+        isIE: ((navigator.appName === 'Microsoft Internet Explorer') || ((navigator.appName === 'Netscape') && (new RegExp('Trident/.*rv:([0-9]{1,}[.0-9]{0,})').exec(navigator.userAgent) !== null))),
+
+        parentElements: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre']
     };
 
 }(window, document));
@@ -66,7 +68,25 @@ var meditor = {
             // converts special characters (like <) into their escaped/encoded values (like &lt;).
             // This allows you to show to display the string without the browser reading it as HTML.
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        },
+
+        isListItemChild: function (node) {
+            var parentNode = node.parentNode,
+                tagName = parentNode.tagName.toLowerCase();
+            while (meditor.common.parentElements.indexOf(tagName) === -1 && tagName !== 'div') {
+                if (tagName === 'li') {
+                    return true;
+                }
+                parentNode = parentNode.parentNode;
+                if (parentNode && parentNode.tagName) {
+                    tagName = parentNode.tagName.toLowerCase();
+                } else {
+                    return false;
+                }
+            }
+            return false;
         }
+
     };
 
 }(window, document));
@@ -199,9 +219,9 @@ var meditor = {
 (function (window, document) {
     'use strict';
 
-    meditor.plugins.paste = {
+    meditor.plugins.cleanPaste = {
 
-        cleanPaste: function (text) {
+        clean: function (text) {
 
             /*jslint regexp: true*/
             /*
@@ -395,6 +415,62 @@ var meditor = {
 (function (window, document) {
     'use strict';
 
+    meditor.plugins.paste = {
+
+        // TODO: break method
+        init: function init(elements, options) {
+            var i, self = this;
+            this.options = options;
+            this.pasteWrapper = function (e) {
+                var paragraphs,
+                    html = '',
+                    p;
+
+                this.classList.remove('medium-editor-placeholder');
+                if (!self.options.forcePlainText && !self.options.cleanPastedHTML) {
+                    return this;
+                }
+
+                if (e.clipboardData && e.clipboardData.getData && !e.defaultPrevented) {
+                    e.preventDefault();
+
+                    if (self.options.cleanPastedHTML && e.clipboardData.getData('text/html')) {
+                        return meditor.plugins.cleanPaste.clean(e.clipboardData.getData('text/html'));
+                    }
+                    if (!(self.options.disableReturn || this.getAttribute('data-disable-return'))) {
+                        paragraphs = e.clipboardData.getData('text/plain').split(/[\r\n]/g);
+                        for (p = 0; p < paragraphs.length; p += 1) {
+                            if (paragraphs[p] !== '') {
+                                if (navigator.userAgent.match(/firefox/i) && p === 0) {
+                                    html += meditor.util.htmlEntities(paragraphs[p]);
+                                } else {
+                                    html += '<p>' + meditor.util.htmlEntities(paragraphs[p]) + '</p>';
+                                }
+                            }
+                        }
+                        document.execCommand('insertHTML', false, html);
+                    } else {
+                        document.execCommand('insertHTML', false, e.clipboardData.getData('text/plain'));
+                    }
+                }
+            };
+            for (i = 0; i < elements.length; i += 1) {
+                elements[i].addEventListener('paste', this.pasteWrapper);
+            }
+            return this;
+        },
+
+        unbind: function unbind(el) {
+            el.removeEventListener('paste', this.pasteWrapper);
+        }
+
+    };
+
+}(window, document));
+
+(function (window, document) {
+    'use strict';
+
     meditor.plugins.placeholder = {
 
         // TODO: break method
@@ -444,7 +520,6 @@ if (typeof module === 'object') {
             if (this.elements.length === 0) {
                 return;
             }
-            this.parentElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'];
             this.id = document.querySelectorAll('.medium-editor-toolbar').length + 1;
             this.options = meditor.util.extend(options, meditor.common.defaults);
             return this.setup();
@@ -454,9 +529,13 @@ if (typeof module === 'object') {
             this.isActive = true;
             this.initElements()
                 .bindSelect()
-                .bindPaste()
                 .bindWindowActions();
 
+            meditor.plugins.paste.init(this.elements, {
+                forcePlainText: this.options.forcePlainText,
+                cleanPastedHTML: this.options.cleanPastedHTML,
+                disableReturn: this.options.disableReturn
+            });
             meditor.plugins.placeholder.init(this.elements);
         },
 
@@ -564,7 +643,7 @@ if (typeof module === 'object') {
                     node = meditor.selection.getStart();
                     tagName = node.tagName.toLowerCase();
                     if (!(self.options.disableReturn || this.getAttribute('data-disable-return')) &&
-                        tagName !== 'li' && !self.isListItemChild(node)) {
+                        tagName !== 'li' && !meditor.util.isListItemChild(node)) {
                         if (!e.shiftKey) {
                             document.execCommand('formatBlock', false, 'p');
                         }
@@ -575,23 +654,6 @@ if (typeof module === 'object') {
                 }
             });
             return this;
-        },
-
-        isListItemChild: function (node) {
-            var parentNode = node.parentNode,
-                tagName = parentNode.tagName.toLowerCase();
-            while (this.parentElements.indexOf(tagName) === -1 && tagName !== 'div') {
-                if (tagName === 'li') {
-                    return true;
-                }
-                parentNode = parentNode.parentNode;
-                if (parentNode && parentNode.tagName) {
-                    tagName = parentNode.tagName.toLowerCase();
-                } else {
-                    return false;
-                }
-            }
-            return false;
         },
 
         bindReturn: function (index) {
@@ -895,7 +957,7 @@ if (typeof module === 'object') {
         checkActiveButtons: function () {
             var elements = Array.prototype.slice.call(this.elements),
                 parentNode = meditor.selection.getParentElement();
-            while (parentNode.tagName !== undefined && this.parentElements.indexOf(parentNode.tagName.toLowerCase) === -1) {
+            while (parentNode.tagName !== undefined && meditor.common.parentElements.indexOf(parentNode.tagName.toLowerCase) === -1) {
                 this.activateButton(parentNode.tagName.toLowerCase());
                 this.callExtensions('checkState', parentNode);
 
@@ -1010,7 +1072,7 @@ if (typeof module === 'object') {
                 tagName = el.tagName.toLowerCase();
             }
 
-            while (el && this.parentElements.indexOf(tagName) === -1) {
+            while (el && meditor.common.parentElements.indexOf(tagName) === -1) {
                 el = el.parentNode;
                 if (el && el.tagName) {
                     tagName = el.tagName.toLowerCase();
@@ -1361,53 +1423,13 @@ if (typeof module === 'object') {
                 this.elements[i].removeEventListener('mouseover', this.editorAnchorObserverWrapper);
                 this.elements[i].removeEventListener('keyup', this.checkSelectionWrapper);
                 this.elements[i].removeEventListener('blur', this.checkSelectionWrapper);
-                this.elements[i].removeEventListener('paste', this.pasteWrapper);
                 this.elements[i].removeAttribute('contentEditable');
                 this.elements[i].removeAttribute('data-medium-element');
+                meditor.plugins.paste.unbind(this.elements[i]);
             }
 
-        },
-
-        bindPaste: function () {
-            var i, self = this;
-            this.pasteWrapper = function (e) {
-                var paragraphs,
-                    html = '',
-                    p;
-
-                this.classList.remove('medium-editor-placeholder');
-                if (!self.options.forcePlainText && !self.options.cleanPastedHTML) {
-                    return this;
-                }
-
-                if (e.clipboardData && e.clipboardData.getData && !e.defaultPrevented) {
-                    e.preventDefault();
-
-                    if (self.options.cleanPastedHTML && e.clipboardData.getData('text/html')) {
-                        return meditor.extensions.cleanPaste(e.clipboardData.getData('text/html'));
-                    }
-                    if (!(self.options.disableReturn || this.getAttribute('data-disable-return'))) {
-                        paragraphs = e.clipboardData.getData('text/plain').split(/[\r\n]/g);
-                        for (p = 0; p < paragraphs.length; p += 1) {
-                            if (paragraphs[p] !== '') {
-                                if (navigator.userAgent.match(/firefox/i) && p === 0) {
-                                    html += meditor.util.htmlEntities(paragraphs[p]);
-                                } else {
-                                    html += '<p>' + meditor.util.htmlEntities(paragraphs[p]) + '</p>';
-                                }
-                            }
-                        }
-                        document.execCommand('insertHTML', false, html);
-                    } else {
-                        document.execCommand('insertHTML', false, e.clipboardData.getData('text/plain'));
-                    }
-                }
-            };
-            for (i = 0; i < this.elements.length; i += 1) {
-                this.elements[i].addEventListener('paste', this.pasteWrapper);
-            }
-            return this;
         }
+
     };
 
 }(window, document));
