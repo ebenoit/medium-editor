@@ -1,6 +1,6 @@
 /*global MediumEditor, describe, it, expect, spyOn,
          afterEach, beforeEach, selectElementContents,
-         jasmine, fireEvent, console, tearDown*/
+         jasmine, fireEvent, console, tearDown, meditor*/
 
 describe('Clean pasted HTML', function () {
     'use strict';
@@ -46,6 +46,8 @@ describe('Clean pasted HTML', function () {
                 }
             ];
 
+        expect(editor).toBeTruthy();
+
         for (i = 0; i < tests.length; i += 1) {
 
             // move caret to editor
@@ -56,7 +58,7 @@ describe('Clean pasted HTML', function () {
             sel.removeAllRanges();
             sel.addRange(range);
 
-            editor.cleanPaste(tests[i].paste);
+            meditor.extensions.paste.cleanPaste(tests[i].paste);
             jasmine.clock().tick(100);
             expect(editorEl.innerHTML).toEqual(tests[i].output);
         }
@@ -85,6 +87,8 @@ describe('Clean pasted HTML', function () {
                 }
             ];
 
+        expect(editor).toBeTruthy();
+
         for (i = 0; i < tests.length; i += 1) {
 
             // move caret to editor
@@ -95,7 +99,7 @@ describe('Clean pasted HTML', function () {
             sel.removeAllRanges();
             sel.addRange(range);
 
-            editor.cleanPaste(tests[i].paste);
+            meditor.extensions.paste.cleanPaste(tests[i].paste);
             jasmine.clock().tick(100);
             expect(editorEl.innerHTML).toEqual('Before&nbsp;' + tests[i].output + '&nbsp;after.');
         }

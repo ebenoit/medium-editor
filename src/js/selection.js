@@ -85,6 +85,39 @@
             return startNode === range.endContainer &&
                 startNode.hasChildNodes() &&
                 range.endOffset === range.startOffset + 1;
+        },
+
+        getElement: function getElement() {
+            var selection = window.getSelection(),
+                range, current, parent,
+                result,
+                getMediumElement = function (e) {
+                    var localParent = e;
+                    try {
+                        while (!localParent.getAttribute('data-medium-element')) {
+                            localParent = localParent.parentNode;
+                        }
+                    } catch (errb) {
+                        return false;
+                    }
+                    return localParent;
+                };
+            // First try on current node
+            try {
+                range = selection.getRangeAt(0);
+                current = range.commonAncestorContainer;
+                parent = current.parentNode;
+
+                if (current.getAttribute('data-medium-element')) {
+                    result = current;
+                } else {
+                    result = getMediumElement(parent);
+                }
+                // If not search in the parent nodes.
+            } catch (err) {
+                result = getMediumElement(parent);
+            }
+            return result;
         }
 
     };

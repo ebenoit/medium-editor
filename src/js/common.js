@@ -1,4 +1,6 @@
-var meditor = {};
+var meditor = {
+    extensions: {}
+};
 
 (function (window, document) {
     'use strict';

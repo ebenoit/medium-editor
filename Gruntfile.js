@@ -4,6 +4,8 @@ var sourceFiles = ['src/js/common.js',
                    'src/js/util.js',
                    'src/js/button.js',
                    'src/js/selection.js',
+                   'src/js/plugins/clean-paste.js',
+                   'src/js/plugins/placeholder.js',
                    'src/js/editor.js'];
 
 module.exports = function (grunt) {
