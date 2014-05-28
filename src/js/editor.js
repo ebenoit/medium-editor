@@ -1,4 +1,4 @@
-/*global module, console*/
+/*global module, console, meditor*/
 
 function MediumEditor(elements, options) {
     'use strict';
@@ -12,117 +12,7 @@ if (typeof module === 'object') {
 (function (window, document) {
     'use strict';
 
-    function extend(b, a) {
-        var prop;
-        if (b === undefined) {
-            return a;
-        }
-        for (prop in a) {
-            if (a.hasOwnProperty(prop) && b.hasOwnProperty(prop) === false) {
-                b[prop] = a[prop];
-            }
-        }
-        return b;
-    }
-
-    // http://stackoverflow.com/questions/5605401/insert-link-in-contenteditable-element
-    // by Tim Down
-    function saveSelection() {
-        var i,
-            len,
-            ranges,
-            sel = window.getSelection();
-        if (sel.getRangeAt && sel.rangeCount) {
-            ranges = [];
-            for (i = 0, len = sel.rangeCount; i < len; i += 1) {
-                ranges.push(sel.getRangeAt(i));
-            }
-            return ranges;
-        }
-        return null;
-    }
-
-    function restoreSelection(savedSel) {
-        var i,
-            len,
-            sel = window.getSelection();
-        if (savedSel) {
-            sel.removeAllRanges();
-            for (i = 0, len = savedSel.length; i < len; i += 1) {
-                sel.addRange(savedSel[i]);
-            }
-        }
-    }
-
-    // http://stackoverflow.com/questions/1197401/how-can-i-get-the-element-the-caret-is-in-with-javascript-when-using-contentedi
-    // by You
-    function getSelectionStart() {
-        var node = document.getSelection().anchorNode,
-            startNode = (node && node.nodeType === 3 ? node.parentNode : node);
-        return startNode;
-    }
-
-    // http://stackoverflow.com/questions/4176923/html-of-selected-text
-    // by Tim Down
-    function getSelectionHtml() {
-        var i,
-            html = '',
-            sel,
-            len,
-            container;
-        if (window.getSelection !== undefined) {
-            sel = window.getSelection();
-            if (sel.rangeCount) {
-                container = document.createElement('div');
-                for (i = 0, len = sel.rangeCount; i < len; i += 1) {
-                    container.appendChild(sel.getRangeAt(i).cloneContents());
-                }
-                html = container.innerHTML;
-            }
-        } else if (document.selection !== undefined) {
-            if (document.selection.type === 'Text') {
-                html = document.selection.createRange().htmlText;
-            }
-        }
-        return html;
-    }
-
-    // https://github.com/jashkenas/underscore
-    function isElement(obj) {
-        return !!(obj && obj.nodeType === 1);
-    }
-
     MediumEditor.prototype = {
-        defaults: {
-            allowMultiParagraphSelection: true,
-            anchorInputPlaceholder: 'Paste or type a link',
-            anchorPreviewHideDelay: 500,
-            buttons: ['bold', 'italic', 'underline', 'anchor', 'header1', 'header2', 'quote'],
-            buttonLabels: false,
-            checkLinkFormat: false,
-            cleanPastedHTML: false,
-            delay: 0,
-            diffLeft: 0,
-            diffTop: -10,
-            disableReturn: false,
-            disableDoubleReturn: false,
-            disableToolbar: false,
-            disableEditing: false,
-            elementsContainer: false,
-            firstHeader: 'h3',
-            forcePlainText: true,
-            placeholder: 'Type your text',
-            secondHeader: 'h4',
-            targetBlank: false,
-            extensions: {},
-            activeButtonClass: 'medium-editor-button-active',
-            firstButtonClass: 'medium-editor-button-first',
-            lastButtonClass: 'medium-editor-button-last'
-        },
-
-        // http://stackoverflow.com/questions/17907445/how-to-detect-ie11#comment30165888_17907562
-        // by rg89
-        isIE: ((navigator.appName === 'Microsoft Internet Explorer') || ((navigator.appName === 'Netscape') && (new RegExp('Trident/.*rv:([0-9]{1,}[.0-9]{0,})').exec(navigator.userAgent) !== null))),
 
         init: function (elements, options) {
             this.setElementSelection(elements);
@@ -131,7 +21,7 @@ if (typeof module === 'object') {
             }
             this.parentElements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'];
             this.id = document.querySelectorAll('.medium-editor-toolbar').length + 1;
-            this.options = extend(options, this.defaults);
+            this.options = meditor.util.extend(options, meditor.common.defaults);
             return this.setup();
         },
 
@@ -228,7 +118,7 @@ if (typeof module === 'object') {
         bindParagraphCreation: function (index) {
             var self = this;
             this.elements[index].addEventListener('keypress', function (e) {
-                var node = getSelectionStart(),
+                var node = meditor.selection.getStart(),
                     tagName;
                 if (e.which === 32) {
                     tagName = node.tagName.toLowerCase();
@@ -239,13 +129,13 @@ if (typeof module === 'object') {
             });
 
             this.elements[index].addEventListener('keyup', function (e) {
-                var node = getSelectionStart(),
+                var node = meditor.selection.getStart(),
                     tagName;
                 if (node && node.getAttribute('data-medium-element') && node.children.length === 0 && !(self.options.disableReturn || node.getAttribute('data-disable-return'))) {
                     document.execCommand('formatBlock', false, 'p');
                 }
                 if (e.which === 13) {
-                    node = getSelectionStart();
+                    node = meditor.selection.getStart();
                     tagName = node.tagName.toLowerCase();
                     if (!(self.options.disableReturn || this.getAttribute('data-disable-return')) &&
                         tagName !== 'li' && !self.isListItemChild(node)) {
@@ -285,7 +175,7 @@ if (typeof module === 'object') {
                     if (self.options.disableReturn || this.getAttribute('data-disable-return')) {
                         e.preventDefault();
                     } else if (self.options.disableDoubleReturn || this.getAttribute('data-disable-double-return')) {
-                        var node = getSelectionStart();
+                        var node = meditor.selection.getStart();
                         if (node && node.innerText === '\n') {
                             e.preventDefault();
                         }
@@ -299,7 +189,7 @@ if (typeof module === 'object') {
             this.elements[index].addEventListener('keydown', function (e) {
                 if (e.which === 9) {
                     // Override tab only for pre nodes
-                    var tag = getSelectionStart().tagName.toLowerCase();
+                    var tag = meditor.selection.getStart().tagName.toLowerCase();
                     if (tag === 'pre') {
                         e.preventDefault();
                         document.execCommand('insertHtml', null, '    ');
@@ -428,7 +318,7 @@ if (typeof module === 'object') {
 
                 if (btn) {
                     li = document.createElement('li');
-                    if (isElement(btn)) {
+                    if (meditor.util.isElement(btn)) {
                         li.appendChild(btn);
                     } else {
                         li.innerHTML = btn;
@@ -516,7 +406,7 @@ if (typeof module === 'object') {
         },
 
         hasMultiParagraphs: function () {
-            var selectionHtml = getSelectionHtml().replace(/<[\S]+><\/[\S]+>/gim, ''),
+            var selectionHtml = meditor.selection.html().replace(/<[\S]+><\/[\S]+>/gim, ''),
                 hasMultiParagraphs = selectionHtml.match(/<(p|h[0-6]|blockquote)>([\s\S]*?)<\/(p|h[0-6]|blockquote)>/g);
 
             return (hasMultiParagraphs ? hasMultiParagraphs.length : 0);
@@ -733,7 +623,7 @@ if (typeof module === 'object') {
             //  blockquote needs to be called as indent
             // http://stackoverflow.com/questions/10741831/execcommand-formatblock-headings-in-ie
             // http://stackoverflow.com/questions/1816223/rich-text-editor-with-blockquote-function/1821777#1821777
-            if (this.isIE) {
+            if (meditor.common.isIE) {
                 if (el === 'blockquote') {
                     return document.execCommand('indent', false, el);
                 }
@@ -792,11 +682,11 @@ if (typeof module === 'object') {
         },
 
         saveSelection: function() {
-            this.savedSelection = saveSelection();
+            this.savedSelection = meditor.selection.save();
         },
 
         restoreSelection: function() {
-            restoreSelection(this.savedSelection);
+            meditor.selection.restore(this.savedSelection);
         },
 
         showAnchorForm: function (link_value) {
@@ -832,7 +722,7 @@ if (typeof module === 'object') {
             linkCancel.addEventListener('click', function (e) {
                 e.preventDefault();
                 self.showToolbarActions();
-                restoreSelection(self.savedSelection);
+                meditor.selection.restore(self.savedSelection);
             });
             return this;
         },
@@ -1023,7 +913,7 @@ if (typeof module === 'object') {
         },
 
         setTargetBlank: function () {
-            var el = getSelectionStart(),
+            var el = meditor.selection.getStart(),
                 i;
             if (el.tagName.toLowerCase() === 'a') {
                 el.target = '_blank';
@@ -1040,7 +930,9 @@ if (typeof module === 'object') {
                 this.hideToolbarActions();
                 return;
             }
-            restoreSelection(this.savedSelection);
+
+            meditor.selection.restore(this.savedSelection);
+
             if (this.options.checkLinkFormat) {
                 input.value = this.checkLinkFormat(input.value);
             }

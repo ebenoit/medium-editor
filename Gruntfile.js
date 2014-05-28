@@ -1,5 +1,11 @@
 /*global module, require*/
 
+var sourceFiles = ['src/js/common.js',
+                   'src/js/util.js',
+                   'src/js/button.js',
+                   'src/js/selection.js',
+                   'src/js/editor.js'];
+
 module.exports = function (grunt) {
     'use strict';
 
@@ -28,7 +34,7 @@ module.exports = function (grunt) {
 
     gruntConfig.jasmine = {
         suite: {
-            src: 'src/js/**/*.js',
+            src: sourceFiles,
             options: {
                 specs: 'spec/*.spec.js',
                 helpers: 'spec/helpers/*.js',
@@ -47,7 +53,7 @@ module.exports = function (grunt) {
             }
         },
         spec: {
-            src: 'src/js/**/*.js',
+            src: sourceFiles,
             options: {
                 specs: ['spec/<%= globalConfig.file %>.spec.js'],
                 helpers: 'spec/helpers/*.js'
@@ -60,7 +66,7 @@ module.exports = function (grunt) {
             report: 'gzip'
         },
         build: {
-            src: 'src/js/medium-editor.js',
+            src: sourceFiles,
             dest: 'dist/js/<%= pkg.name %>.min.js'
         }
     };
@@ -150,7 +156,7 @@ module.exports = function (grunt) {
             stripBanners: true
         },
         dist: {
-            src: 'src/js/medium-editor.js',
+            src: sourceFiles,
             dest: 'dist/js/<%= pkg.name %>.js'
         }
     };
