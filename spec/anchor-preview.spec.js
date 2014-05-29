@@ -1,6 +1,6 @@
 /*global MediumEditor, describe, it, expect, spyOn,
          afterEach, beforeEach, selectElementContents,
-         jasmine, fireEvent, console, tearDown*/
+         jasmine, fireEvent, console, tearDown, meditor*/
 
 describe('Anchor Preview TestCase', function () {
     'use strict';
@@ -21,21 +21,21 @@ describe('Anchor Preview TestCase', function () {
     describe('Link Creation', function () {
         it('Hover anchor should show preview', function () {
             var editor = new MediumEditor('.editor', {
-                delay: 200
-            }),
+                    delay: 200
+                }),
                 sel = window.getSelection();
 
             // show preview
-            spyOn(MediumEditor.prototype, 'showAnchorPreview').and.callThrough();
-            editor.editorAnchorObserver({
+            spyOn(meditor.plugins.anchorPreview, 'showAnchorPreview').and.callThrough();
+            meditor.plugins.anchorPreview.editorAnchorObserver({
                 target: document.getElementById('test-link')
             });
             fireEvent(editor.elements[0], 'mouseover', undefined, undefined, document.getElementById('test-link'));
 
             // preview shows only after delay
-            expect(editor.showAnchorPreview).not.toHaveBeenCalled();
+            expect(meditor.plugins.anchorPreview.showAnchorPreview).not.toHaveBeenCalled();
             jasmine.clock().tick(250);
-            expect(editor.showAnchorPreview).toHaveBeenCalled();
+            expect(meditor.plugins.anchorPreview.showAnchorPreview).toHaveBeenCalled();
 
             // link is set in preview
             expect(editor.anchorPreview.querySelector('i').innerHTML).toBe(document.getElementById('test-link').href);
@@ -60,7 +60,7 @@ describe('Anchor Preview TestCase', function () {
             var editor = new MediumEditor('.editor');
 
             // show preview
-            editor.editorAnchorObserver({
+            meditor.plugins.anchorPreview.editorAnchorObserver({
                 target: document.getElementById('test-link')
             });
             fireEvent(editor.elements[0], 'mouseover', undefined, undefined, document.getElementById('test-link'));
@@ -84,15 +84,15 @@ describe('Anchor Preview TestCase', function () {
             });
 
             // show preview
-            spyOn(MediumEditor.prototype, 'showAnchorPreview').and.callThrough();
-            editor.editorAnchorObserver({
+            spyOn(meditor.plugins.anchorPreview, 'showAnchorPreview').and.callThrough();
+            meditor.plugins.anchorPreview.editorAnchorObserver({
                 target: document.getElementById('test-empty-link')
             });
             fireEvent(editor.elements[0], 'mouseover', undefined, undefined, document.getElementById('test-empty-link'));
 
             // preview shows only after delay
             jasmine.clock().tick(250);
-            expect(editor.showAnchorPreview).not.toHaveBeenCalled();
+            expect(meditor.plugins.anchorPreview.showAnchorPreview).not.toHaveBeenCalled();
 
         });
 
